@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#06c755" />
+  <title>LINE 半自動群發助手</title>
+  <style>
+    :root{--bg:#f5f7f8;--card:#fff;--text:#182026;--muted:#6b7280;--line:#e5e7eb;--green:#06c755;--green2:#04a946;--blue:#2563eb;--red:#dc2626;--shadow:0 8px 24px rgba(0,0,0,.07)}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
+    .wrap{max-width:680px;margin:0 auto;padding:18px 14px calc(32px + env(safe-area-inset-bottom))}
+    h1{font-size:24px;margin:4px 0 6px}.sub{color:var(--muted);font-size:14px;line-height:1.55;margin-bottom:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:var(--shadow)}
+    label{display:block;font-size:14px;font-weight:700;margin:0 0 7px}.hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45}
+    textarea,input{width:100%;border:1px solid #d1d5db;border-radius:12px;padding:12px;font-size:16px;background:#fff;color:var(--text);outline:none}
+    textarea:focus,input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(6,199,85,.12)}
+    textarea{min-height:120px;resize:vertical}
+    button{border:0;border-radius:12px;padding:13px 14px;font-size:16px;font-weight:800;cursor:pointer;min-height:48px}
+    .primary{background:var(--green);color:#fff}.primary:active{background:var(--green2)}
+    .secondary{background:#eef2f7;color:#111827}.danger{background:#fee2e2;color:#991b1b}.blue{background:#e8efff;color:#1d4ed8}
+    .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .progressBox{display:flex;justify-content:space-between;align-items:end;gap:12px}.big{font-size:28px;font-weight:900}.muted{color:var(--muted)}
+    .bar{height:10px;background:#eef0f2;border-radius:99px;overflow:hidden;margin-top:10px}.fill{height:100%;width:0;background:var(--green);transition:.2s}
+    .name{font-size:28px;font-weight:900;margin:2px 0 12px}.msg{white-space:pre-wrap;font-size:17px;line-height:1.7;background:#f8fafc;border:1px solid var(--line);padding:14px;border-radius:14px;min-height:130px}
+    .status{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:6px 10px;font-size:13px;font-weight:800;background:#f3f4f6;color:#4b5563}.status.sent{background:#dcfce7;color:#166534}
+    .nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    .list{margin-top:10px;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:12px}.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}.item:last-child{border-bottom:0}.item.current{background:#f0fdf4}.check{font-weight:900;color:#15803d}.smallbtn{padding:8px 10px;min-height:36px;font-size:13px}
+    .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:10}.toast.show{opacity:1}
+    .privacy{font-size:13px;color:var(--muted);line-height:1.6}
+    @media(max-width:420px){.toolbar{grid-template-columns:1fr}.name{font-size:25px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>📲 LINE 半自動群發助手</h1>
+    <div class="sub">一次貼上客戶姓名＋一段訊息模板，自動逐位產生客製內容。你只要「複製 → 切到 LINE → 貼上送出 → 標記已傳」。不會直接控制你的個人 LINE。</div>
+
+    <section class="card">
+      <label for="contacts">1. 貼上名單</label>
+      <textarea id="contacts" placeholder="王小明&#10;陳美玲&#10;林志豪"></textarea>
+      <div class="hint">一行一位。名單只保存在你這台裝置的瀏覽器，不會上傳到伺服器。</div>
+    </section>
+
+    <section class="card">
+      <label for="template">2. 訊息模板</label>
+      <textarea id="template" placeholder="{姓名}嗨～最近剛好整理到一個滿實用的資訊，想到你，丟給你參考一下😊"></textarea>
+      <div class="hint">使用 <b>{姓名}</b> 代表客戶名字；也支援 {name}。</div>
+      <div class="toolbar">
+        <button class="primary" id="generate">產生 / 更新名單</button>
+        <button class="secondary" id="save">💾 儲存目前內容</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="progressBox">
+        <div><div class="muted" style="font-size:13px">目前進度</div><div class="big"><span id="sentCount">0</span>/<span id="totalCount">0</span></div></div>
+        <span class="status" id="status">尚未產生</span>
+      </div>
+      <div class="bar"><div class="fill" id="fill"></div></div>
+
+      <div style="margin-top:18px" class="muted">目前對象</div>
+      <div class="name" id="currentName">—</div>
+      <div class="msg" id="currentMessage">先輸入名單與模板，再按「產生 / 更新名單」。</div>
+
+      <div class="toolbar">
+        <button class="primary" id="copy">📋 複製訊息</button>
+        <button class="blue" id="mark">✅ 標記已傳＋下一位</button>
+      </div>
+      <div class="nav">
+        <button class="secondary" id="prev">← 上一位</button>
+        <button class="secondary" id="next">下一位 →</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <details>
+        <summary><b>查看全部名單與狀態</b></summary>
+        <div class="list" id="list"></div>
+      </details>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <button class="secondary" id="resetProgress">重新開始本次進度</button>
+        <button class="danger" id="clearAll">清除全部資料</button>
+      </div>
+      <p class="privacy">🔒 隱私設計：這是一個純靜態網頁，姓名、模板與傳送進度使用瀏覽器 localStorage 儲存在本機。請不要把真實客戶資料寫進 GitHub 程式碼本身。</p>
+    </section>
+  </main>
+  <div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const KEY='line-helper-v1';
+let state={contacts:[],template:'',sent:{},index:0,rawContacts:''};
+
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500)}
+function parseContacts(raw){
+  const seen=new Set();
+  return raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).filter(n=>{if(seen.has(n))return false;seen.add(n);return true});
+}
+function makeMessage(name){return (state.template||'').replaceAll('{姓名}',name).replaceAll('{name}',name)}
+function saveState(){localStorage.setItem(KEY,JSON.stringify(state));}
+function loadState(){
+  try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s) state={...state,...s};}catch(e){}
+  $('#contacts').value=state.rawContacts||state.contacts.join('\n');
+  $('#template').value=state.template||'';
+}
+function clampIndex(){if(!state.contacts.length)state.index=0;else state.index=Math.max(0,Math.min(state.index,state.contacts.length-1));}
+function escapeHtml(s){return s.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function render(){
+  clampIndex();
+  const total=state.contacts.length;
+  const sent=state.contacts.filter(n=>state.sent[n]).length;
+  $('#totalCount').textContent=total; $('#sentCount').textContent=sent;
+  $('#fill').style.width=(total?sent/total*100:0)+'%';
+  const name=state.contacts[state.index];
+  $('#currentName').textContent=name||'—';
+  $('#currentMessage').textContent=name?makeMessage(name):'先輸入名單與模板，再按「產生 / 更新名單」。';
+  const st=$('#status');
+  if(!name){st.textContent='尚未產生';st.className='status'}
+  else if(state.sent[name]){st.textContent='✅ 已傳';st.className='status sent'}
+  else{st.textContent=`第 ${state.index+1} 位`;st.className='status'}
+  $('#list').innerHTML=state.contacts.map((n,i)=>`<div class="item ${i===state.index?'current':''}"><span>${escapeHtml(n)}</span><span>${state.sent[n]?'<span class="check">✓ 已傳</span>':`<button class="smallbtn secondary" data-go="${i}">前往</button>`}</span></div>`).join('')||'<div class="item muted">尚無名單</div>';
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{state.index=Number(b.dataset.go);saveState();render();});
+}
+
+$('#generate').onclick=()=>{
+  const raw=$('#contacts').value;
+  const contacts=parseContacts(raw);
+  const template=$('#template').value.trim();
+  if(!contacts.length){toast('請先貼上至少一位姓名');return}
+  if(!template){toast('請先輸入訊息模板');return}
+  const oldSent=state.sent||{};
+  state.contacts=contacts;state.rawContacts=raw;state.template=template;state.sent={};
+  contacts.forEach(n=>{if(oldSent[n])state.sent[n]=true});
+  state.index=Math.min(state.index,contacts.length-1);saveState();render();toast(`已載入 ${contacts.length} 位`);
+};
+$('#save').onclick=()=>{state.rawContacts=$('#contacts').value;state.template=$('#template').value;saveState();toast('已儲存在這台裝置')};
+$('#copy').onclick=async()=>{
+  const name=state.contacts[state.index];if(!name){toast('目前沒有對象');return}
+  const msg=makeMessage(name);if(!msg){toast('訊息是空的');return}
+  try{await navigator.clipboard.writeText(msg);toast('已複製，可切到 LINE 貼上');}
+  catch(e){const ta=document.createElement('textarea');ta.value=msg;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('已複製');}
+};
+$('#mark').onclick=()=>{
+  const name=state.contacts[state.index];if(!name){toast('目前沒有對象');return}
+  state.sent[name]=true;
+  const nextUnsent=state.contacts.findIndex((n,i)=>i>state.index&&!state.sent[n]);
+  if(nextUnsent>=0)state.index=nextUnsent;else{const any=state.contacts.findIndex(n=>!state.sent[n]);if(any>=0)state.index=any;}
+  saveState();render();toast('已標記已傳');
+};
+$('#prev').onclick=()=>{if(!state.contacts.length)return;state.index=Math.max(0,state.index-1);saveState();render()};
+$('#next').onclick=()=>{if(!state.contacts.length)return;state.index=Math.min(state.contacts.length-1,state.index+1);saveState();render()};
+$('#resetProgress').onclick=()=>{if(!state.contacts.length)return; if(confirm('要把所有「已傳」標記清除嗎？')){state.sent={};state.index=0;saveState();render();toast('進度已重設')}};
+$('#clearAll').onclick=()=>{if(confirm('確定清除名單、模板與進度？')){localStorage.removeItem(KEY);state={contacts:[],template:'',sent:{},index:0,rawContacts:''};$('#contacts').value='';$('#template').value='';render();toast('已全部清除')}};
+
+loadState();render();
+</script>
+</body>
+</html>
