@@ -44,7 +44,7 @@
     <section class="card">
       <label for="template">2. 訊息模板</label>
       <textarea id="template" placeholder="{姓名}嗨～最近剛好整理到一個滿實用的資訊，想到你，丟給你參考一下😊"></textarea>
-      <div class="hint">使用 <b>{姓名}</b> 代表客戶名字；也支援 {name}。</div>
+      <div class="hint">可使用 <b>{姓名}</b> 代表客戶名字；如果沒寫，系統也會自動把姓名加在最前面。</div>
       <div class="toolbar">
         <button class="primary" id="generate">產生 / 更新名單</button>
         <button class="secondary" id="save">💾 儲存目前內容</button>
@@ -99,7 +99,12 @@ function parseContacts(raw){
   const seen=new Set();
   return raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).filter(n=>{if(seen.has(n))return false;seen.add(n);return true});
 }
-function makeMessage(name){return (state.template||'').replaceAll('{姓名}',name).replaceAll('{name}',name)}
+function makeMessage(name){
+  const template=(state.template||'');
+  const hasNameToken=template.includes('{姓名}')||template.includes('{name}');
+  const msg=template.replaceAll('{姓名}',name).replaceAll('{name}',name);
+  return hasNameToken?msg:`${name}，${msg}`;
+}
 function saveState(){localStorage.setItem(KEY,JSON.stringify(state));}
 function loadState(){
   try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s) state={...state,...s};}catch(e){}
