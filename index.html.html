@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>4G 業務工具箱</title>
+<style>
+:root{--bg:#f5f7f8;--card:#fff;--text:#172026;--muted:#6b7280;--line:#e5e7eb;--green:#0f766e;--green2:#0b5f59;--blue:#2563eb;--orange:#ea580c;--red:#b91c1c;--shadow:0 8px 24px rgba(0,0,0,.07)}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:14px 12px calc(32px + env(safe-area-inset-bottom))}
+h1{font-size:25px;margin:4px 0}.sub{color:var(--muted);font-size:13px;line-height:1.55;margin-bottom:12px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;position:sticky;top:0;background:rgba(245,247,248,.94);backdrop-filter:blur(10px);padding:8px 0;z-index:5}
+.tab{border:1px solid var(--line);background:#fff;padding:10px 5px;border-radius:12px;font-size:12px;font-weight:800;min-height:48px}.tab.active{background:var(--green);color:#fff;border-color:var(--green)}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:var(--shadow)}
+label{display:block;font-size:14px;font-weight:800;margin:10px 0 6px}.hint,.fine{font-size:12px;color:var(--muted);line-height:1.5}
+input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:11px;padding:11px;font-size:16px;background:#fff;color:var(--text);outline:none}
+textarea{min-height:115px;resize:vertical} input:focus,textarea:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(15,118,110,.12)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+button{border:0;border-radius:12px;padding:12px 13px;font-size:15px;font-weight:800;cursor:pointer;min-height:46px}.primary{background:var(--green);color:#fff}.secondary{background:#edf2f7}.blue{background:#e8efff;color:#1d4ed8}.orange{background:#fff1e7;color:#9a3412}.danger{background:#fee2e2;color:#991b1b}
+.result{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}.big{font-size:27px;font-weight:900}.money{font-variant-numeric:tabular-nums}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.kpi>div{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:11px}.kpi b{display:block;font-size:19px;margin-top:3px}
+.badge{display:inline-block;border-radius:99px;padding:5px 9px;font-size:12px;font-weight:800;background:#ecfdf5;color:#065f46}
+.warning{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:11px 12px;border-radius:12px;font-size:12px;line-height:1.55;margin-top:10px}
+.story{white-space:pre-wrap;font-size:16px;line-height:1.75}.copyrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.name{font-size:26px;font-weight:900}.msg{white-space:pre-wrap;line-height:1.7;background:#f8fafc;border:1px solid var(--line);padding:13px;border-radius:12px;min-height:110px}
+.progress{height:9px;background:#e5e7eb;border-radius:99px;overflow:hidden}.fill{height:100%;background:var(--green);width:0}
+@media(max-width:560px){.tabs{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:1fr}.kpi{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>⚡ 4G 業務工具箱</h1>
+<div class="sub">一個入口搞定：LINE 快打、傳承試算、故事轉譯、成交後轉介紹。資料預設只存在這台裝置。</div>
+
+<div class="tabs">
+<button class="tab active" data-tab="line">📲 LINE 快打</button>
+<button class="tab" data-tab="tax">💰 傳承試算</button>
+<button class="tab" data-tab="story">🥚 客戶故事</button>
+<button class="tab" data-tab="ref">🤝 轉介紹</button>
+</div>
+
+<section id="line" class="panel active">
+<div class="card">
+<label>1. 名單（一行一位）</label><textarea id="contacts" placeholder="王小明&#10;陳美玲"></textarea>
+<label>2. 訊息模板</label><textarea id="template" placeholder="午安～最近整理到一個滿實用的資訊，想到你，丟給你參考一下😊"></textarea>
+<div class="hint">可用 {姓名} 指定名字位置；若完全沒寫 {姓名}，系統會自動在最前面加「姓名，」。</div>
+<div class="copyrow"><button class="primary" id="generate">產生名單</button><button class="secondary" id="saveLine">儲存</button></div>
+</div>
+<div class="card">
+<div class="fine">目前對象</div><div class="name" id="currentName">—</div>
+<div class="msg" id="currentMessage">先建立名單。</div>
+<div class="copyrow"><button class="primary" id="copyLine">📋 複製</button><button class="blue" id="markSent">✅ 已傳＋下一位</button></div>
+<div class="copyrow"><button class="secondary" id="prev">← 上一位</button><button class="secondary" id="next">下一位 →</button></div>
+<div style="margin-top:12px"><div class="fine">進度 <span id="lineProgress">0/0</span></div><div class="progress"><div id="lineFill" class="fill"></div></div></div>
+</div>
+</section>
+
+<section id="tax" class="panel">
+<div class="card">
+<span class="badge">台灣｜民國115年（2026）簡易估算</span>
+<div class="warning">此工具是業務溝通用「初估」，不是報稅軟體。土地、房屋計價、死亡前贈與、夫妻剩餘財產差額分配、保險給付是否列入遺產或基本所得額等，都可能改變結果，正式案件請交由會計師／律師／國稅局確認。</div>
+<label>資產</label>
+<div class="grid2">
+<div><label>房地產（萬元）</label><input id="realestate" type="number" inputmode="decimal" value="3000"></div>
+<div><label>現金／存款（萬元）</label><input id="cash" type="number" inputmode="decimal" value="500"></div>
+<div><label>股票／基金（萬元）</label><input id="stocks" type="number" inputmode="decimal" value="1000"></div>
+<div><label>其他資產（萬元）</label><input id="otherAssets" type="number" inputmode="decimal" value="0"></div>
+</div>
+<label>家庭與扣除</label>
+<div class="grid3">
+<div><label>有配偶</label><select id="spouse"><option value="1">有</option><option value="0">無</option></select></div>
+<div><label>成年子女數</label><input id="children" type="number" min="0" value="2"></div>
+<div><label>在世父母人數</label><input id="parents" type="number" min="0" max="2" value="0"></div>
+</div>
+<div class="grid2">
+<div><label>未成年子女額外扣除（萬元）</label><input id="minorExtra" type="number" min="0" value="0"><div class="hint">如有未成年直系卑親屬，可依距成年年數計算；此欄直接輸入合計。</div></div>
+<div><label>其他可扣除額（萬元）</label><input id="otherDed" type="number" min="0" value="0"><div class="hint">例如符合規定之身障特別扣除等，請確認資格後再填。</div></div>
+</div>
+<label>負債與流動性</label>
+<div class="grid2">
+<div><label>可扣除債務（萬元）</label><input id="debt" type="number" min="0" value="0"></div>
+<div><label>其他可快速動用現金（萬元）</label><input id="liquidExtra" type="number" min="0" value="0"><div class="hint">例如預估保險給付可作為資金來源；本工具不判定其稅務歸屬。</div></div>
+</div>
+<label>資產年成長率（做5／10年情境）</label><input id="growth" type="number" step="0.1" value="3">
+<button class="primary" id="calcTax" style="width:100%;margin-top:14px">計算傳承壓力</button>
+<div id="taxResult" class="result" style="display:none"></div>
+</div>
+</section>
+
+<section id="story" class="panel">
+<div class="card">
+<label>主題</label>
+<select id="storyTheme">
+<option value="inherit">資產傳承／預留稅源</option>
+<option value="cashflow">退休現金流</option>
+<option value="invest">投資與長期持有</option>
+<option value="medical">醫療保障</option>
+<option value="ltc">長照</option>
+</select>
+<label>客戶類型</label>
+<select id="storyType">
+<option value="family">家庭型</option><option value="rational">理性型</option><option value="owner">老闆／高資產</option><option value="beginner">小白型</option>
+</select>
+<label>客戶稱呼（可不填）</label><input id="storyName" placeholder="修哥">
+<button class="primary" id="makeStory" style="width:100%;margin-top:14px">生成 60 秒故事</button>
+<div id="storyResult" class="result story" style="display:none"></div>
+<div class="copyrow"><button id="copyStory" class="secondary">📋 複製故事</button><button id="regenStory" class="orange">換一個比喻</button></div>
+</div>
+</section>
+
+<section id="ref" class="panel">
+<div class="card">
+<label>客戶風格</label>
+<select id="refType">
+<option value="warm">高關係型</option><option value="rational">理性型</option><option value="low">低壓型</option><option value="social">外向型</option>
+</select>
+<label>這次完成的規劃</label>
+<select id="refCase">
+<option value="inherit">傳承／預留稅源</option><option value="retire">退休／現金流</option><option value="medical">醫療保障</option><option value="invest">投資配置</option>
+</select>
+<label>客戶稱呼</label><input id="refName" placeholder="Vicky">
+<label>你想要的力道</label>
+<select id="refPower"><option value="soft">很自然、不刻意</option><option value="normal">自然帶轉介紹</option><option value="direct">明確但不逼迫</option></select>
+<button class="primary" id="makeRef" style="width:100%;margin-top:14px">生成轉介紹話術</button>
+<div id="refResult" class="result story" style="display:none"></div>
+<div class="copyrow"><button id="copyRef" class="secondary">📋 複製</button><button id="regenRef" class="orange">換一版</button></div>
+</div>
+</section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active')});
+function copyText(t){navigator.clipboard?.writeText(t).then(()=>alert('已複製')).catch(()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();alert('已複製')})}
+function num(id){return Math.max(0,Number($(id).value)||0)}
+function fmtWan(v){return Math.round(v).toLocaleString('zh-TW')+' 萬'}
+function fmtNtdFromWan(v){return '約 NT$ '+Math.round(v*10000).toLocaleString('zh-TW')}
+
+// LINE
+const LKEY='4g-line-v2'; let ls={contacts:[],template:'',sent:{},index:0,raw:''};
+try{ls={...ls,...JSON.parse(localStorage.getItem(LKEY)||'{}')}}catch(e){}
+$('#contacts').value=ls.raw||ls.contacts.join('\n');$('#template').value=ls.template||'';
+function lineMessage(name){let t=ls.template||'';if(t.includes('{姓名}')||t.includes('{name}'))return t.replaceAll('{姓名}',name).replaceAll('{name}',name);return `${name}，${t}`}
+function saveLS(){localStorage.setItem(LKEY,JSON.stringify(ls))}
+function renderLine(){let total=ls.contacts.length,sent=ls.contacts.filter(n=>ls.sent[n]).length;ls.index=Math.max(0,Math.min(ls.index,total?total-1:0));let n=ls.contacts[ls.index];$('#currentName').textContent=n||'—';$('#currentMessage').textContent=n?lineMessage(n):'先建立名單。';$('#lineProgress').textContent=`${sent}/${total}`;$('#lineFill').style.width=(total?sent/total*100:0)+'%'}
+$('#generate').onclick=()=>{let raw=$('#contacts').value,t=$('#template').value.trim();let c=[...new Set(raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];if(!c.length||!t)return alert('請先輸入名單與模板');ls.contacts=c;ls.raw=raw;ls.template=t;ls.index=0;ls.sent={};saveLS();renderLine()}
+$('#saveLine').onclick=()=>{ls.raw=$('#contacts').value;ls.template=$('#template').value;saveLS();alert('已儲存')}
+$('#copyLine').onclick=()=>{let n=ls.contacts[ls.index];if(n)copyText(lineMessage(n))}
+$('#markSent').onclick=()=>{let n=ls.contacts[ls.index];if(!n)return;ls.sent[n]=true;let idx=ls.contacts.findIndex((x,i)=>i>ls.index&&!ls.sent[x]);if(idx<0)idx=ls.contacts.findIndex(x=>!ls.sent[x]);if(idx>=0)ls.index=idx;saveLS();renderLine()}
+$('#prev').onclick=()=>{if(ls.contacts.length){ls.index=Math.max(0,ls.index-1);saveLS();renderLine()}}
+$('#next').onclick=()=>{if(ls.contacts.length){ls.index=Math.min(ls.contacts.length-1,ls.index+1);saveLS();renderLine()}}
+renderLine();
+
+// TAX 2026 Taiwan values, in 10k NTD
+function estateTax(netWan){
+  if(netWan<=0)return 0;
+  if(netWan<=5621)return netWan*.10;
+  if(netWan<=11242)return netWan*.15-281.05;
+  return netWan*.20-843.15;
+}
+function calcScenario(total, debt, familyDed, growth, years){
+  let projected=total*Math.pow(1+growth/100,years);
+  let taxable=Math.max(0,projected-debt-familyDed);
+  return {projected,taxable,tax:estateTax(taxable)};
+}
+$('#calcTax').onclick=()=>{
+  let total=num('#realestate')+num('#cash')+num('#stocks')+num('#otherAssets');
+  let exemption=1333, spouseDed=$('#spouse').value==='1'?553:0, childDed=num('#children')*56, parentDed=num('#parents')*138, funeral=138;
+  let familyDed=exemption+spouseDed+childDed+parentDed+funeral+num('#minorExtra')+num('#otherDed');
+  let debt=num('#debt'), taxable=Math.max(0,total-debt-familyDed), tax=estateTax(taxable);
+  let liquid=num('#cash')+num('#liquidExtra'), gap=Math.max(0,tax-liquid), surplus=Math.max(0,liquid-tax);
+  let g=Number($('#growth').value)||0,s5=calcScenario(total,debt,familyDed,g,5),s10=calcScenario(total,debt,familyDed,g,10);
+  let pressure=gap>0?'🔴 有稅源缺口':tax>0?'🟠 稅源可覆蓋':'🟢 目前初估無遺產稅';
+  $('#taxResult').style.display='block';
+  $('#taxResult').innerHTML=`<div class="badge">${pressure}</div>
+  <div class="kpi">
+   <div><span class="fine">遺產總額</span><b class="money">${fmtWan(total)}</b></div>
+   <div><span class="fine">課稅遺產淨額</span><b class="money">${fmtWan(taxable)}</b></div>
+   <div><span class="fine">初估遺產稅</span><b class="money">${fmtWan(tax)}</b></div>
+  </div>
+  <div style="margin-top:12px"><b>可動用資金：</b>${fmtWan(liquid)}<br><b>${gap>0?'預留稅源缺口':'稅後流動資金餘額'}：</b>${fmtWan(gap>0?gap:surplus)}</div>
+  <div class="warning">${gap>0?'目前的重點不是「有沒有資產」，而是繼承發生時是否有足夠流動現金處理稅負與家庭支出。':'目前流動性可覆蓋這個簡化模型的稅負，但仍應檢視資產是否集中於不動產、股權，以及實際可變現速度。'}</div>
+  <hr style="border:0;border-top:1px solid #e5e7eb;margin:14px 0">
+  <b>資產成長情境（假設現行免稅額／扣除額／級距不變，只做壓力測試）</b>
+  <div class="kpi">
+   <div><span class="fine">現在</span><b>${fmtWan(tax)}</b></div>
+   <div><span class="fine">5年後</span><b>${fmtWan(s5.tax)}</b></div>
+   <div><span class="fine">10年後</span><b>${fmtWan(s10.tax)}</b></div>
+  </div>
+  <div class="fine" style="margin-top:10px">本次採用：免稅額1,333萬、配偶553萬、成年直系卑親屬每人56萬、父母每人138萬、喪葬費138萬；遺產稅級距56.21百萬／112.42百萬，稅率10%／15%／20%。</div>`;
+}
+
+// STORIES
+let storyIdx=0;
+const storyBank={
+inherit:[
+["金庫故事","很多人以為有房、有股票就是有錢，但傳承那一刻最麻煩的是：國稅局不收房子，也不收『未來會漲』，它要的是能處理稅負的現金。資產像一座很大的金庫，真正的問題不是金庫夠不夠大，而是門口有沒有準備好鑰匙。"],
+["水庫故事","資產像一座大水庫，房地產、公司股權都像水庫裡的水，看起來很多；但家人真正要繳稅、辦事情時，需要的是能立刻流出的水。預留稅源就是先把一條水管接好，不必臨時賣掉最不想賣的資產。"],
+["過橋故事","傳承很像過橋。資產是你辛苦載了一車的東西，但過橋時要先付過路費。最怕的不是車上沒東西，而是身上沒有現金付費，只好現場把貨便宜賣掉。預留稅源，就是先把過橋費準備好。"]],
+cashflow:[
+["金雞蛋","退休最怕的不是沒有一大筆錢，而是每天都要從本金割一塊下來花。好的現金流就像養一隻會固定下蛋的雞：重點不是今天把雞賣多少，而是能不能讓它一直生蛋，生活費不用一直砍本金。"],
+["水龍頭","資產像水塔，退休後真正重要的是水龍頭。水塔再大，如果每個月不知道能安全流多少水，還是會焦慮。現金流規劃就是先把水龍頭調好，讓生活費可預期。"]],
+invest:[
+["手扶梯","長期市場比較像往上的手扶梯，但人會在上面走來走去。短期價格上下是腳步，真正要看的，是手扶梯長期往哪裡走。"],
+["果園","投資像種果樹，不是每天把樹挖起來看根長多少。真正的報酬來自時間、紀律和讓好資產繼續長。"]],
+medical:[
+["防火門","醫療保障像防火門。平常你會覺得它佔空間、用不到；真的發生意外時，它的價值不是幫你賺錢，而是阻止一場事故把家庭資產一起燒掉。"],
+["安全氣囊","保障像安全氣囊，買車不是因為想撞車，而是因為真正撞上時，不希望一次事故改變整個家庭財務。"]],
+ltc:[
+["第二份薪水","長照最可怕的是，人還在、收入卻可能先停。長照準備就像替未來的自己準備第二份薪水，讓照顧費不是全部壓在孩子身上。"],
+["馬拉松補給","長照不是100公尺衝刺，而可能是一場很長的馬拉松。最怕不是第一公里沒錢，而是跑到後面補給用完。規劃的重點是讓補給能撐得久。"]]
+};
+function buildStory(){
+ let theme=$('#storyTheme').value,type=$('#storyType').value,name=$('#storyName').value.trim(),arr=storyBank[theme],base=arr[storyIdx%arr.length],prefix=name?`${name}，我用一個很簡單的比喻：\n\n`:'我用一個很簡單的比喻：\n\n';
+ let q={family:"如果今天真的發生在家裡，你最不希望家人被迫做什麼決定？",rational:"所以我會建議先把數字算出來，再決定需不需要處理，而不是先談商品。",owner:"資產越大，真正要管理的通常不是報酬率，而是流動性與控制權。",beginner:"先不用想複雜產品，我們只看一件事：真的發生時，錢從哪裡來？"}[type];
+ let text=`${prefix}【${base[0]}】\n${base[1]}\n\n👉 我會接著問：${q}`;
+ $('#storyResult').textContent=text;$('#storyResult').style.display='block';return text;
+}
+$('#makeStory').onclick=()=>{storyIdx=0;buildStory()};$('#regenStory').onclick=()=>{storyIdx++;buildStory()};$('#copyStory').onclick=()=>{if($('#storyResult').textContent)copyText($('#storyResult').textContent)};
+
+// REFERRAL
+let refIdx=0;
+const refTemplates={
+warm:[
+"{name}，今天這件事能幫你整理好，我其實也滿有成就感的😊 你身邊如果剛好有誰最近也在煩「{topic}」，想到再把我丟給他就好，不用特別幫我推銷。",
+"{name}，其實我最喜歡的客戶通常都是客戶的朋友，因為彼此比較有信任。如果你哪天聽到朋友在聊{topic}，你就說『我有一個人可以先幫你看看』，這樣就好。"],
+rational:[
+"{name}，你今天會做決定，主要是因為把數字跟風險算清楚。你身邊如果有人也有類似的{topic}問題，我可以先幫他做一次分析，不一定要做任何規劃。",
+"{name}，這套方法其實比較像財務健檢，不是先賣東西。如果你有朋友剛好也卡在{topic}，可以把他介紹給我，我先幫他把問題量化。"],
+low:[
+"{name}，之後你身邊如果剛好有人聊到{topic}，不用特別幫我介紹啦😂 你只要想到我，讓他自己來問我就好。",
+"{name}，我不會叫你現在想三個名字啦😂 哪天真的有人問到{topic}，你再把我的 LINE 丟給他就好。"],
+social:[
+"{name}，你認識的人比較多，我反而想拜託你一件很簡單的：如果哪天朋友聊到{topic}，你直接把我拉進來就好，我負責把事情講人話😂",
+"{name}，下次你朋友圈有人聊{topic}，直接丟一句『我朋友專門處理這個，你自己問他』就好，後面我來接。"]
+};
+const topicMap={inherit:"傳承／稅源",retire:"退休現金流",medical:"醫療保障",invest:"投資配置"};
+function buildRef(){
+ let type=$('#refType').value,name=$('#refName').value.trim()||'你',topic=topicMap[$('#refCase').value],power=$('#refPower').value,arr=refTemplates[type];
+ let t=arr[refIdx%arr.length].replaceAll('{name}',name).replaceAll('{topic}',topic);
+ if(power==='soft')t=t.replace('可以把他介紹給我','想到再讓他自己來問我').replace('直接把我拉進來就好','有需要再把我丟給他就好');
+ if(power==='direct')t+=`\n\n如果你現在腦中剛好有一位適合的人，我可以先用很低壓的方式跟他認識。`;
+ $('#refResult').textContent=t;$('#refResult').style.display='block';return t;
+}
+$('#makeRef').onclick=()=>{refIdx=0;buildRef()};$('#regenRef').onclick=()=>{refIdx++;buildRef()};$('#copyRef').onclick=()=>{if($('#refResult').textContent)copyText($('#refResult').textContent)};
+</script>
+</body></html>
